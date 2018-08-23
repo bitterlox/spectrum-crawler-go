@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/Bitterlox/spectrum-crawler-go/config"
 	"github.com/Bitterlox/spectrum-crawler-go/crawler"
+	"github.com/Bitterlox/spectrum-crawler-go/rpc"
 	"github.com/Bitterlox/spectrum-crawler-go/storage"
 )
 
@@ -51,14 +51,13 @@ func readConfig(cfg *config.Config) {
 	}
 }
 
-func startCrawler(mongo *storage.MongoDB) {
-	c := crawler.New(mongo)
+func startCrawler(mongo *storage.MongoDB, rpc *rpc.RPCClient) {
+	c := crawler.New(mongo, rpc)
 	c.Start()
 }
 
 func main() {
 	readConfig(&cfg)
-	rand.Seed(time.Now().UnixNano())
 
 	mongo, err := storage.NewConnection(&cfg.Mongo)
 
@@ -76,8 +75,10 @@ func main() {
 		log.Println("PING")
 	}
 
+	rpc := rpc.NewRPCClient(&cfg.Rpc)
+
 	if cfg.Crawler.Enabled {
-		go startCrawler(mongo)
+		go startCrawler(mongo, rpc)
 	}
 
 	quit := make(chan bool)

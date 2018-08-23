@@ -9,5 +9,9 @@
     "database": "spectrum-test",
     "user": "spectrum",
     "password": "UBQ4Lyfe"
+  },
+  "rpc": {
+    "url": "127.0.0.1:8588",
+    "timeout": "60s"
   }
 }

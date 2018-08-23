@@ -60,7 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can't establish connection to mongo: %v", err)
 	} else {
-		log.Fatalf("Successfully connected to mongo")
+		log.Println("Successfully connected to mongo")
 	}
 
 	err = mongo.Ping()

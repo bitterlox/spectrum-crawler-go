@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"github.com/bitterlox/spectrum-crawler-go/models"
+	"github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 	log "github.com/sirupsen/logrus"
-	mgo "gopkg.in/mgo.v2"
 )
 
 type Config struct {
@@ -34,7 +36,17 @@ func (m *MongoDB) Ping() error {
 	return m.session.Ping()
 }
 
-func (m *MongoDB) Close() {
-	log.Debugln("Bye bye")
-	m.session.Close()
+func (m *MongoDB) DB() *mgo.Database {
+	return m.db
+}
+
+func (m *MongoDB) IsFirstRun() bool {
+	var store *models.Store
+	err := m.db.C(models.STORE).Find(&bson.M{}).One(&store)
+	if err != nil {
+		log.Debugf("err: %v", err)
+		return true
+	}
+	log.Debugf("Store: %v", store)
+	return false
 }

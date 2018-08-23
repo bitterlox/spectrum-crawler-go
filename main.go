@@ -16,6 +16,7 @@ import (
 )
 
 var cfg config.Config
+var mongo *storage.MongoDB
 
 func init() {
 
@@ -51,13 +52,17 @@ func readConfig(cfg *config.Config) {
 	}
 }
 
+func startCrawler() {
+	c := crawler.New(&cfg, mongo)
+	c.Start()
+}
+
 func main() {
 	readConfig(&cfg)
 	rand.Seed(time.Now().UnixNano())
 
 	mongo, err := storage.NewConnection(&cfg.Mongo)
 
-	defer mongo.Close()
 	if err != nil {
 		log.Fatalf("Can't establish connection to mongo: %v", err)
 	} else {

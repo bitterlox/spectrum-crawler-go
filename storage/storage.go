@@ -1,6 +1,7 @@
 package storage
 
 import (
+	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 )
 
@@ -31,4 +32,9 @@ func NewConnection(cfg *Config) (*MongoDB, error) {
 
 func (m *MongoDB) Ping() error {
 	return m.session.Ping()
+}
+
+func (m *MongoDB) Close() {
+	log.Debugln("Bye bye")
+	m.session.Close()
 }

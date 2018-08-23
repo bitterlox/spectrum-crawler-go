@@ -19,7 +19,7 @@ var cfg config.Config
 
 func init() {
 
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, TimestampFormat: time.RFC822})
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, TimestampFormat: time.RFC822, DisableLevelTruncation: true})
 
 	v, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if v {
@@ -57,6 +57,7 @@ func main() {
 
 	mongo, err := storage.NewConnection(&cfg.Mongo)
 
+	defer mongo.Close()
 	if err != nil {
 		log.Fatalf("Can't establish connection to mongo: %v", err)
 	} else {

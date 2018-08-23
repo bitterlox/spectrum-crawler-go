@@ -26,13 +26,13 @@ func (c *Crawler) Start() {
 		c.Init()
 	}
 
-	blockno, err := c.rpc.LatestBlock()
+	block, err := c.rpc.GetLatestBlock()
 
 	if err != nil {
 		log.Errorf("Error getting blockno: %v", err)
 	}
 
-	log.Println("blockno: ", blockno)
+	log.Printf("block: %+v", block)
 
 }
 

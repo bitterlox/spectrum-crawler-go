@@ -13,6 +13,7 @@ import (
 	// "sync"
 
 	"github.com/Bitterlox/spectrum-crawler-go/models"
+	"github.com/Bitterlox/spectrum-crawler-go/util"
 )
 
 type Config struct {
@@ -84,6 +85,17 @@ func (r *RPCClient) doPost(method string, params interface{}) (*JSONRpcResp, err
 	return rpcResp, err
 }
 
+func (r *RPCClient) GetLatestBlock() (*models.Block, error) {
+	bn, err := r.latestBlockNumber()
+
+	if err != nil {
+		return nil, err
+	}
+
+	params := []interface{}{fmt.Sprintf("0x%x", bn), true}
+	return r.getBlockBy("eth_getBlockByNumber", params)
+}
+
 func (r *RPCClient) GetBlockByHeight(height int64) (*models.Block, error) {
 	params := []interface{}{fmt.Sprintf("0x%x", height), true}
 	return r.getBlockBy("eth_getBlockByNumber", params)
@@ -105,25 +117,30 @@ func (r *RPCClient) getBlockBy(method string, params []interface{}) (*models.Blo
 		return nil, err
 	}
 	if rpcResp.Result != nil {
-		var reply *models.Block
+		var reply *models.RawBlock
+		var test interface{}
 		err = json.Unmarshal(*rpcResp.Result, &reply)
-		return reply, err
+		err = json.Unmarshal(*rpcResp.Result, &test)
+
+		log.Debugf("%+v", test)
+
+		return reply.Convert(), err
 	}
 	return nil, nil
 }
 
-func (r *RPCClient) LatestBlock() (string, error) {
+func (r *RPCClient) latestBlockNumber() (uint64, error) {
 	rpcResp, err := r.doPost("eth_blockNumber", []interface{}{""})
 
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	if rpcResp.Result != nil {
 		var reply string
 		err = json.Unmarshal(*rpcResp.Result, &reply)
-		return reply, err
+		return util.DecodeHex(reply), err
 	}
-	return "", nil
+	return 0, nil
 
 }

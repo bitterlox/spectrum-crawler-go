@@ -9,28 +9,6 @@ const (
 	STORE     = "sysstores"
 )
 
-type Block struct {
-	Number          uint64 `bson:"number" json:"number"`
-	Timestamp       uint64 `bson:"timestamp" json:"timestamp"`
-	Transactions    uint64 `bson:"transactions" json:"transactions"`
-	Hash            string `bson:"hash" json:"hash"`
-	ParentHash      string `bson:"parentHash" json:"parentHash"`
-	Sha3Uncles      string `bson:"sha3Uncles" json:"sha3Uncles"`
-	Miner           string `bson:"miner" json:"miner"`
-	Difficulty      string `bson:"difficulty" json:"difficulty"`
-	TotalDifficulty string `bson:"totalDifficulty" json:"totalDifficulty"`
-	Size            uint64 `bson:"size" json:"size"`
-	GasUsed         uint64 `bson:"gasUsed" json:"gasUsed"`
-	GasLimit        uint64 `bson:"gasLimit" json:"gasLimit"`
-	Nonce           string `bson:"nonce" json:"nonce"`
-	Uncles          uint64 `bson:"uncles" json:"uncles"`
-	BlockReward     string `bson:"blockReward" json:"blockReward"`
-	UnclesReward    string `bson:"unclesReward" json:"unclesReward"`
-	AvgGasPrice     string `bson:"avgGasPrice" json:"avgGasPrice"`
-	TxFees          string `bson:"txFees" json:"txFees"`
-	ExtraData       string `bson:"extraData" json:"extraData"`
-}
-
 type TxLog struct {
 	Address          string   `bson:"address" json:"address"`
 	Topics           []string `bson:"topics" json:"topics"`

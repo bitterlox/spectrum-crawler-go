@@ -5,8 +5,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/bitterlox/spectrum-crawler-go/models"
-	"github.com/bitterlox/spectrum-crawler-go/storage"
+	"github.com/Bitterlox/spectrum-crawler-go/models"
+	"github.com/Bitterlox/spectrum-crawler-go/storage"
 )
 
 type Crawler struct {

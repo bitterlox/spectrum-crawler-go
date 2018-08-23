@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/bitterlox/spectrum-crawler-go/models"
+	"github.com/Bitterlox/spectrum-crawler-go/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 	log "github.com/sirupsen/logrus"

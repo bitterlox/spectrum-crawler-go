@@ -2,7 +2,7 @@
 {
 
   "crawler": {
-    "enabled": "true"
+    "enabled": true
   },
   "mongo": {
     "address": "127.0.0.1:27017",

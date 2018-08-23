@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	Crawler struct {
-		Enabled string `json:"enabled"`
+		Enabled bool `json:"enabled"`
 	} `json:"crawler"`
 	Mongo storage.Config
 }

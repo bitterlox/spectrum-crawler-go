@@ -11,16 +11,15 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Bitterlox/spectrum-crawler-go/config"
-	// "github.com/Bitterlox/spectrum-crawler-go/crawler"
+	"github.com/Bitterlox/spectrum-crawler-go/crawler"
 	"github.com/Bitterlox/spectrum-crawler-go/storage"
 )
 
 var cfg config.Config
-var mongo *storage.MongoDB
 
 func init() {
 
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, TimestampFormat: time.RFC822, DisableLevelTruncation: true})
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, TimestampFormat: time.RFC822})
 
 	v, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if v {
@@ -52,8 +51,8 @@ func readConfig(cfg *config.Config) {
 	}
 }
 
-func startCrawler() {
-	c := crawler.New(&cfg, mongo)
+func startCrawler(mongo *storage.MongoDB) {
+	c := crawler.New(mongo)
 	c.Start()
 }
 
@@ -66,7 +65,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Can't establish connection to mongo: %v", err)
 	} else {
-		log.Println("Successfully connected to mongo")
+		log.Printf("Successfully connected to mongo at %v", cfg.Mongo.Address)
 	}
 
 	err = mongo.Ping()
@@ -76,10 +75,10 @@ func main() {
 	} else {
 		log.Println("PING")
 	}
-	//
-	// if cfg.Crawler.Enabled {
-	// 	go startBlockUnlocker()
-	// }
+
+	if cfg.Crawler.Enabled {
+		go startCrawler(mongo)
+	}
 
 	quit := make(chan bool)
 	<-quit

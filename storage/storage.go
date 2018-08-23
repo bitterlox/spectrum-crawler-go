@@ -41,12 +41,16 @@ func (m *MongoDB) DB() *mgo.Database {
 }
 
 func (m *MongoDB) IsFirstRun() bool {
-	var store *models.Store
-	err := m.db.C(models.STORE).Find(&bson.M{}).One(&store)
+	var store models.Store
+	err := m.DB().C(models.STORE).Find(&bson.M{}).Limit(1).One(&store)
+
 	if err != nil {
-		log.Debugf("err: %v", err)
-		return true
+		if err.Error() == "not found" {
+			return true
+		} else {
+			log.Fatalf("Error during initialization: %v", err)
+		}
 	}
-	log.Debugf("Store: %v", store)
+
 	return false
 }

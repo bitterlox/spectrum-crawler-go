@@ -13,7 +13,7 @@ type Crawler struct {
 	backend *storage.MongoDB
 }
 
-func (c *Crawler) New(db *storage.MongoDB) *Crawler {
+func New(db *storage.MongoDB) *Crawler {
 	return &Crawler{db}
 }
 
@@ -23,8 +23,6 @@ func (c *Crawler) Start() {
 	if c.backend.IsFirstRun() {
 		c.Init()
 	}
-
-	log.Println("init sysstore")
 
 }
 

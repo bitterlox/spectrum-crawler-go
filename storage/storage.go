@@ -54,3 +54,10 @@ func (m *MongoDB) IsFirstRun() bool {
 
 	return false
 }
+
+func (m *MongoDB) IsPresent(height int64) bool {
+	if height == height-15 {
+		return true
+	}
+	return false
+}

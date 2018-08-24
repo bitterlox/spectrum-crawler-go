@@ -67,12 +67,13 @@ func (b *RawBlock) Convert() *Block {
 		GasLimit:        util.DecodeHex(b.GasLimit),
 		Nonce:           b.Nonce,
 		Uncles:          util.DecodeHex(b.Uncles),
-		BlockReward:     util.BaseBlockReward(height).String(),
-		// Fix these
-		UnclesReward: b.UnclesReward,
-		AvgGasPrice:  b.AvgGasPrice,
-		TxFees:       b.TxFees,
-		ExtraData:    b.ExtraData,
+		// Empty
+		// BlockReward:     util.CaculateBlockReward(height, uncleNo),
+		// UnclesReward: b.UnclesReward,
+		// AvgGasPrice:  b.AvgGasPrice,
+		// TxFees:       b.TxFees,
+		//
+		ExtraData: b.ExtraData,
 	}
 }
 

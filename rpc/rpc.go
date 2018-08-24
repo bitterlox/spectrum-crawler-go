@@ -129,7 +129,7 @@ func (r *RPCClient) getBlockBy(method string, params []interface{}) (*models.Blo
 	return nil, nil
 }
 
-func (r *RPCClient) latestBlockNumber() (uint64, error) {
+func (r *RPCClient) latestBlockNumber() (int64, error) {
 	rpcResp, err := r.doPost("eth_blockNumber", []interface{}{""})
 
 	if err != nil {

@@ -1,17 +1,16 @@
 package config
 
 import (
-	// "github.com/Bitterlox/spectrum-crawler-go/crawler"
+	"github.com/Bitterlox/spectrum-crawler-go/crawler"
 	"github.com/Bitterlox/spectrum-crawler-go/rpc"
 	"github.com/Bitterlox/spectrum-crawler-go/storage"
 )
 
 type Config struct {
-	Crawler struct {
-		Enabled bool `json:"enabled"`
-	} `json:"crawler"`
-	Mongo storage.Config
-	Rpc   rpc.Config
+	Threads int            `json:"threads"`
+	Crawler crawler.Config `json:"crawler"`
+	Mongo   storage.Config `json:"mongo"`
+	Rpc     rpc.Config     `json:"rpc"`
 }
 
 // {

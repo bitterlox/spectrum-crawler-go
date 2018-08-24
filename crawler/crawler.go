@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -10,13 +11,20 @@ import (
 	"github.com/Bitterlox/spectrum-crawler-go/storage"
 )
 
+type Config struct {
+	Enabled     bool   `json:"enabled"`
+	Interval    string `json:"interval"`
+	maxRoutines int    `json:"routines"`
+}
+
 type Crawler struct {
 	backend *storage.MongoDB
 	rpc     *rpc.RPCClient
+	cfg     *Config
 }
 
-func New(db *storage.MongoDB, rpc *rpc.RPCClient) *Crawler {
-	return &Crawler{db, rpc}
+func New(db *storage.MongoDB, rpc *rpc.RPCClient, cfg *Config) *Crawler {
+	return &Crawler{db, rpc, cfg}
 }
 
 func (c *Crawler) Start() {
@@ -26,14 +34,52 @@ func (c *Crawler) Start() {
 		c.Init()
 	}
 
+	interval, err := time.ParseDuration(c.cfg.Interval)
+	if err != nil {
+		log.Fatalf("Crawler: can't parse duration: %v", err)
+	}
+
+	timer := time.NewTimer(interval)
+
+	log.Printf("Block refresh interval: %v", interval)
+	go func() {
+		for {
+			select {
+			case <-timer.C:
+				go c.SyncLoop()
+				timer.Reset(interval)
+			}
+		}
+	}()
+
+}
+
+func (c *Crawler) SyncLoop() {
+	var wg sync.WaitGroup
+	var startBlock int64
+
 	block, err := c.rpc.GetLatestBlock()
 
 	if err != nil {
 		log.Errorf("Error getting blockno: %v", err)
 	}
 
-	log.Printf("block: %+v", block)
+	wg.Add(c.cfg.maxRoutines)
 
+	for startBlock = block.Number; c.backend.IsPresent(startBlock); startBlock-- {
+		go c.Sync(block, &wg)
+	}
+
+	wg.Wait()
+}
+
+func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
+
+	log.Printf("block: %+v", block.Number)
+
+	time.Sleep(30 * time.Second)
+
+	wg.Done()
 }
 
 func (c *Crawler) Init() {

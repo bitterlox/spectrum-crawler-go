@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -51,13 +52,18 @@ func readConfig(cfg *config.Config) {
 	}
 }
 
-func startCrawler(mongo *storage.MongoDB, rpc *rpc.RPCClient) {
-	c := crawler.New(mongo, rpc)
+func startCrawler(mongo *storage.MongoDB, rpc *rpc.RPCClient, cfg *crawler.Config) {
+	c := crawler.New(mongo, rpc, cfg)
 	c.Start()
 }
 
 func main() {
 	readConfig(&cfg)
+
+	if cfg.Threads > 0 {
+		runtime.GOMAXPROCS(cfg.Threads)
+		log.Printf("Running with %v threads", cfg.Threads)
+	}
 
 	mongo, err := storage.NewConnection(&cfg.Mongo)
 
@@ -78,7 +84,7 @@ func main() {
 	rpc := rpc.NewRPCClient(&cfg.Rpc)
 
 	if cfg.Crawler.Enabled {
-		go startCrawler(mongo, rpc)
+		go startCrawler(mongo, rpc, &cfg.Crawler)
 	}
 
 	quit := make(chan bool)

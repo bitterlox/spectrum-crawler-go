@@ -27,7 +27,24 @@ func DecodeHex(str string) int64 {
 	return i
 }
 
-func BaseBlockReward(height int64) *big.Int {
+func CaculateBlockReward(height int64, uncleNo int64) *big.Int {
+	baseReward := baseBlockReward(height)
+	uncleRewards := big.NewInt(0).Div(baseReward, big.NewInt(32*uncleNo))
+	baseReward.Add(baseReward, uncleRewards)
+	return baseReward
+}
+
+func CaculateUncleReward(height int64, uncleHeight int64) *big.Int {
+	baseReward := baseBlockReward(height)
+	uncleRewards := big.NewInt((((uncleHeight + 2) - height) * baseReward.Int64()) / 2)
+	r := uncleRewards.Cmp(big.NewInt(0))
+	if r == -1 {
+		return big.NewInt(0)
+	}
+	return uncleRewards
+}
+
+func baseBlockReward(height int64) *big.Int {
 	if height > 2508545 {
 		return big.NewInt(1000000000000000000)
 	} else if height > 2150181 {

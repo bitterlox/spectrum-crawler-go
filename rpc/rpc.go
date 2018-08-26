@@ -96,7 +96,7 @@ func (r *RPCClient) GetLatestBlock() (*models.Block, error) {
 	return r.getBlockBy("eth_getBlockByNumber", params)
 }
 
-func (r *RPCClient) GetBlockByHeight(height int64) (*models.Block, error) {
+func (r *RPCClient) GetBlockByHeight(height uint64) (*models.Block, error) {
 	params := []interface{}{fmt.Sprintf("0x%x", height), true}
 	return r.getBlockBy("eth_getBlockByNumber", params)
 }
@@ -106,7 +106,7 @@ func (r *RPCClient) GetBlockByHash(hash string) (*models.Block, error) {
 	return r.getBlockBy("eth_getBlockByHash", params)
 }
 
-func (r *RPCClient) GetUncleByBlockNumberAndIndex(height int64, index int) (*models.Uncle, error) {
+func (r *RPCClient) GetUncleByBlockNumberAndIndex(height uint64, index int) (*models.Uncle, error) {
 	params := []interface{}{fmt.Sprintf("0x%x", height), fmt.Sprintf("0x%x", index)}
 	return r.getUncleBy("eth_getUncleByBlockNumberAndIndex", params)
 }
@@ -139,7 +139,7 @@ func (r *RPCClient) getBlockBy(method string, params []interface{}) (*models.Blo
 	return nil, nil
 }
 
-func (r *RPCClient) LatestBlockNumber() (int64, error) {
+func (r *RPCClient) LatestBlockNumber() (uint64, error) {
 	rpcResp, err := r.doPost("eth_blockNumber", []interface{}{""})
 
 	if err != nil {
@@ -149,7 +149,7 @@ func (r *RPCClient) LatestBlockNumber() (int64, error) {
 	if rpcResp.Result != nil {
 		var reply string
 		err = json.Unmarshal(*rpcResp.Result, &reply)
-		return util.DecodeHex(reply).Int64(), err
+		return util.DecodeHex(reply), err
 	}
 	return 0, nil
 

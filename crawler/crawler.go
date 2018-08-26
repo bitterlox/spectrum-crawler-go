@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"math/big"
 	"sync"
 	"time"
 
@@ -58,7 +57,7 @@ func (c *Crawler) Start() {
 
 func (c *Crawler) SyncLoop() {
 	var wg sync.WaitGroup
-	var currentBlock int64
+	var currentBlock uint64
 	var routines int
 
 	startBlock, err := c.rpc.LatestBlockNumber()
@@ -98,7 +97,7 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	// TODO: think about forked block
 	defer wg.Done()
 
-	var avgGasPrice, txFees, uncleRewards *big.Int
+	var avgGasPrice, txFees, uncleRewards uint64
 
 	blockReward := util.CaculateBlockReward(block.Number, len(block.Uncles))
 
@@ -128,9 +127,9 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 
 }
 
-func (c *Crawler) ProcessUncles(uncles []string, height int64) *big.Int {
+func (c *Crawler) ProcessUncles(uncles []string, height uint64) uint64 {
 
-	uncleRewards := big.NewInt(0)
+	var uncleRewards uint64
 
 	for k, _ := range uncles {
 
@@ -138,14 +137,14 @@ func (c *Crawler) ProcessUncles(uncles []string, height int64) *big.Int {
 
 		if err != nil {
 			log.Errorf("Error getting uncle: %v", err)
-			return big.NewInt(0)
+			return 0
 
 		}
 
 		// TODO: broken func
 		uncleReward := util.CaculateUncleReward(height, uncle.Number)
 
-		uncleRewards.Add(uncleRewards, uncleReward)
+		uncleRewards += uncleReward
 
 		uncle.BlockNumber = height
 		uncle.Reward = uncleReward
@@ -154,17 +153,16 @@ func (c *Crawler) ProcessUncles(uncles []string, height int64) *big.Int {
 
 		if err != nil {
 			log.Errorf("Error inserting tx into backend: %v", err)
-			return big.NewInt(0)
+			return 0
 		}
 
 	}
 	return uncleRewards
 }
 
-func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp int64) (*big.Int, *big.Int) {
+func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uint64) (uint64, uint64) {
 
-	avgGasPrice := big.NewInt(0)
-	txFees := big.NewInt(0)
+	var avgGasPrice, txFees uint64
 
 	for _, v := range txs {
 
@@ -178,9 +176,9 @@ func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp int
 			log.Errorf("Error getting tx receipt: %v", err)
 		}
 
-		avgGasPrice.Add(avgGasPrice, v.Gas)
+		avgGasPrice += v.Gas
 
-		txFees.Add(txFees, big.NewInt(0).Mul(v.GasPrice, receipt.GasUsed))
+		txFees += (v.GasPrice * receipt.GasUsed)
 
 		v.Timestamp = timestamp
 		v.GasUsed = receipt.GasUsed
@@ -205,5 +203,5 @@ func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp int
 		}
 
 	}
-	return avgGasPrice, txFees
+	return avgGasPrice / uint64(len(txs)), txFees
 }

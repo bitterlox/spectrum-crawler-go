@@ -2,8 +2,6 @@ package models
 
 import (
 	"github.com/Bitterlox/spectrum-crawler-go/util"
-	//log "github.com/sirupsen/logrus"
-	"math/big"
 )
 
 type RawBlockDetails struct {
@@ -11,8 +9,8 @@ type RawBlockDetails struct {
 	Hash   string `bson:"hash" json:"hash"`
 }
 
-func (rbn *RawBlockDetails) Convert() (int64, string) {
-	return util.DecodeHex(rbn.Number).Int64(), rbn.Hash
+func (rbn *RawBlockDetails) Convert() (uint64, string) {
+	return util.DecodeHex(rbn.Number), rbn.Hash
 }
 
 type RawBlock struct {
@@ -42,8 +40,8 @@ type RawBlock struct {
 func (b *RawBlock) Convert() *Block {
 	//log.Debugf("raw block: %+v", b)
 	return &Block{
-		Number:          util.DecodeHex(b.Number).Int64(),
-		Timestamp:       util.DecodeHex(b.Timestamp).Int64(),
+		Number:          util.DecodeHex(b.Number),
+		Timestamp:       util.DecodeHex(b.Timestamp),
 		Transactions:    b.Transactions,
 		Hash:            b.Hash,
 		ParentHash:      b.ParentHash,
@@ -51,24 +49,24 @@ func (b *RawBlock) Convert() *Block {
 		Miner:           b.Miner,
 		Difficulty:      b.Difficulty,
 		TotalDifficulty: b.TotalDifficulty,
-		Size:            util.DecodeHex(b.Size).Int64(),
+		Size:            util.DecodeHex(b.Size),
 		GasUsed:         util.DecodeHex(b.GasUsed),
 		GasLimit:        util.DecodeHex(b.GasLimit),
 		Nonce:           b.Nonce,
 		Uncles:          b.Uncles,
 		// Empty
-		BlockReward:  big.NewInt(0),
-		UnclesReward: big.NewInt(0),
-		AvgGasPrice:  big.NewInt(0),
-		TxFees:       big.NewInt(0),
+		BlockReward:  0,
+		UnclesReward: 0,
+		AvgGasPrice:  0,
+		TxFees:       0,
 		//
 		ExtraData: b.ExtraData,
 	}
 }
 
 type Block struct {
-	Number          int64            `bson:"number" json:"number"`
-	Timestamp       int64            `bson:"timestamp" json:"timestamp"`
+	Number          uint64           `bson:"number" json:"number"`
+	Timestamp       uint64           `bson:"timestamp" json:"timestamp"`
 	Transactions    []RawTransaction `bson:"transactions" json:"transactions"`
 	Hash            string           `bson:"hash" json:"hash"`
 	ParentHash      string           `bson:"parentHash" json:"parentHash"`
@@ -76,16 +74,16 @@ type Block struct {
 	Miner           string           `bson:"miner" json:"miner"`
 	Difficulty      string           `bson:"difficulty" json:"difficulty"`
 	TotalDifficulty string           `bson:"totalDifficulty" json:"totalDifficulty"`
-	Size            int64            `bson:"size" json:"size"`
-	GasUsed         *big.Int         `bson:"gasUsed" json:"gasUsed"`
-	GasLimit        *big.Int         `bson:"gasLimit" json:"gasLimit"`
+	Size            uint64           `bson:"size" json:"size"`
+	GasUsed         uint64           `bson:"gasUsed" json:"gasUsed"`
+	GasLimit        uint64           `bson:"gasLimit" json:"gasLimit"`
 	Nonce           string           `bson:"nonce" json:"nonce"`
 	Uncles          []string         `bson:"uncles" json:"uncles"`
 	//
-	BlockReward  *big.Int `bson:"blockReward" json:"blockReward"`
-	UnclesReward *big.Int `bson:"unclesReward" json:"unclesReward"`
-	AvgGasPrice  *big.Int `bson:"avgGasPrice" json:"avgGasPrice"`
-	TxFees       *big.Int `bson:"txFees" json:"txFees"`
+	BlockReward  uint64 `bson:"blockReward" json:"blockReward"`
+	UnclesReward uint64 `bson:"unclesReward" json:"unclesReward"`
+	AvgGasPrice  uint64 `bson:"avgGasPrice" json:"avgGasPrice"`
+	TxFees       uint64 `bson:"txFees" json:"txFees"`
 	//
 	ExtraData string `bson:"extraData" json:"extraData"`
 }

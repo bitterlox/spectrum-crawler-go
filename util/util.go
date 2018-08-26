@@ -1,25 +1,23 @@
 package util
 
 import (
-	"math/big"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/ubiq/go-ubiq/common/hexutil"
 )
 
-func DecodeHex(str string) *big.Int {
+func DecodeHex(str string) uint64 {
 	if len(str) < 2 {
 		//log.Errorf("Invalid string: %v", str)
-		return big.NewInt(0)
+		return 0
 	}
 	if str == "0x0" || len(str) == 0 {
-		return big.NewInt(0)
+		return 0
 	}
 
-	if str[:2] != "0x" {
-		str = "0x" + str
+	if str[:2] == "0x" {
+		str = str[2:]
 	}
 
 	// SOLUTION
@@ -29,28 +27,35 @@ func DecodeHex(str string) *big.Int {
 	// 	str = str[2:]
 	// }
 
-	i, err := hexutil.DecodeBig(str)
+	i, err := strconv.ParseUint(str[2:], 16, 64)
 
 	if err != nil {
-		if err == hexutil.ErrLeadingZero {
-
-			// Backup conversion for 0-padded strings
-
-			log.Debugf("util: decodeHex: using backup conversion method (%v)", str)
-
-			x, error := strconv.ParseInt(str[2:], 16, 64)
-
-			if error != nil {
-				log.Errorf("Couldn't decode hex (%v): %v", str, err)
-			}
-
-			return big.NewInt(x)
-
-		} else {
-			log.Errorf("Couldn't decode hex (%v): %v", str, err)
-			return big.NewInt(0)
-		}
+		log.Errorf("Couldn't decode hex (%v): %v", str, err)
+		return 0
 	}
+
+	// i, err := hexutil.DecodeBig(str)
+	//
+	// if err != nil {
+	// 	if err == hexutil.ErrLeadingZero {
+	//
+	// 		// Backup conversion for 0-padded strings
+	//
+	// 		log.Debugf("util: decodeHex: using backup conversion method (%v)", str)
+	//
+	// 		x, error := strconv.ParseInt(str[2:], 16, 64)
+	//
+	// 		if error != nil {
+	// 			log.Errorf("Couldn't decode hex (%v): %v", str, err)
+	// 		}
+	//
+	// 		return big.NewInt(x)
+	//
+	// 	} else {
+	// 		log.Errorf("Couldn't decode hex (%v): %v", str, err)
+	// 		return big.NewInt(0)
+	// 	}
+	// }
 	return i
 }
 
@@ -58,47 +63,46 @@ func InputParamsToAddress(str string) string {
 	return "0x" + strings.ToLower(str[24:])
 }
 
-func CaculateBlockReward(height int64, uncleNo int) *big.Int {
+func CaculateBlockReward(height uint64, uncleNo int) uint64 {
 	baseReward := baseBlockReward(height)
-	uncleRewards := big.NewInt(0)
+	var uncleRewards uint64
 
 	if uncleNo > 0 {
-		uncleRewards.Div(baseReward, big.NewInt(int64(32*uncleNo)))
+		uncleRewards = baseReward / uint64(32*uncleNo)
 	}
 
-	baseReward.Add(baseReward, uncleRewards)
+	baseReward += uncleRewards
 	return baseReward
 }
 
-func CaculateUncleReward(height int64, uncleHeight int64) *big.Int {
+func CaculateUncleReward(height uint64, uncleHeight uint64) uint64 {
 	baseReward := baseBlockReward(height)
-	uncleRewards := big.NewInt((((uncleHeight + 2) - height) * baseReward.Int64()) / 2)
-	r := uncleRewards.Cmp(big.NewInt(0))
-	if r == -1 {
-		return big.NewInt(0)
+	uncleRewards := (((uncleHeight + 2) - height) * baseReward) / 2
+	if uncleRewards < 0 {
+		return 0
 	}
 	return uncleRewards
 }
 
-func baseBlockReward(height int64) *big.Int {
+func baseBlockReward(height uint64) uint64 {
 	if height > 2508545 {
-		return big.NewInt(1000000000000000000)
+		return 1000000000000000000
 	} else if height > 2150181 {
-		return big.NewInt(2000000000000000000)
+		return 2000000000000000000
 	} else if height > 1791818 {
-		return big.NewInt(3000000000000000000)
+		return 3000000000000000000
 	} else if height > 1433454 {
-		return big.NewInt(4000000000000000000)
+		return 4000000000000000000
 	} else if height > 1075090 {
-		return big.NewInt(5000000000000000000)
+		return 5000000000000000000
 	} else if height > 716727 {
-		return big.NewInt(6000000000000000000)
+		return 6000000000000000000
 	} else if height > 358363 {
-		return big.NewInt(7000000000000000000)
+		return 7000000000000000000
 	} else if height > 0 {
-		return big.NewInt(8000000000000000000)
+		return 8000000000000000000
 	} else {
 		// genesis
-		return big.NewInt(0)
+		return 0
 	}
 }

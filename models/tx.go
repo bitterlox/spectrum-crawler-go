@@ -1,8 +1,6 @@
 package models
 
 import (
-	"math/big"
-
 	"github.com/Bitterlox/spectrum-crawler-go/util"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +25,7 @@ type RawTransaction struct {
 func (rt *RawTransaction) Convert() *Transaction {
 	return &Transaction{
 		BlockHash:   rt.BlockHash,
-		BlockNumber: util.DecodeHex(rt.BlockNumber).Int64(),
+		BlockNumber: util.DecodeHex(rt.BlockNumber),
 		Hash:        rt.Hash,
 		//
 		// Timestamp
@@ -37,7 +35,7 @@ func (rt *RawTransaction) Convert() *Transaction {
 		Gas:              util.DecodeHex(rt.Gas),
 		GasPrice:         util.DecodeHex(rt.GasPrice),
 		Nonce:            rt.Nonce,
-		TransactionIndex: util.DecodeHex(rt.TransactionIndex).Int64(),
+		TransactionIndex: util.DecodeHex(rt.TransactionIndex),
 		From:             rt.From,
 		To:               rt.To,
 		//
@@ -50,23 +48,23 @@ func (rt *RawTransaction) Convert() *Transaction {
 
 type Transaction struct {
 	BlockHash   string `bson:"blockHash" json:"blockHash"`
-	BlockNumber int64  `bson:"blockNumber" json:"blockNumber"`
+	BlockNumber uint64 `bson:"blockNumber" json:"blockNumber"`
 	Hash        string `bson:"hash" json:"hash"`
 	//
-	Timestamp int64 `bson:"timestamp" json:"timestamp"`
+	Timestamp uint64 `bson:"timestamp" json:"timestamp"`
 	//
-	Input            string   `bson:"input" json:"input"`
-	Value            *big.Int `bson:"value" json:"value"`
-	Gas              *big.Int `bson:"gas" json:"gas"`
-	GasPrice         *big.Int `bson:"gasPrice" json:"gasPrice"`
-	Nonce            string   `bson:"nonce" json:"nonce"`
-	TransactionIndex int64    `bson:"transactionIndex" json:"transactionIndex"`
-	From             string   `bson:"from" json:"from"`
-	To               string   `bson:"to" json:"to"`
+	Input            string `bson:"input" json:"input"`
+	Value            uint64 `bson:"value" json:"value"`
+	Gas              uint64 `bson:"gas" json:"gas"`
+	GasPrice         uint64 `bson:"gasPrice" json:"gasPrice"`
+	Nonce            string `bson:"nonce" json:"nonce"`
+	TransactionIndex uint64 `bson:"transactionIndex" json:"transactionIndex"`
+	From             string `bson:"from" json:"from"`
+	To               string `bson:"to" json:"to"`
 	//
-	GasUsed         *big.Int `bson:"gasUsed" json:"gasUsed"`
-	ContractAddress string   `bson:"contractAddress" json:"contractAddress"`
-	Logs            []TxLog  `bson:"logs" json:"logs"`
+	GasUsed         uint64  `bson:"gasUsed" json:"gasUsed"`
+	ContractAddress string  `bson:"contractAddress" json:"contractAddress"`
+	Logs            []TxLog `bson:"logs" json:"logs"`
 	//
 }
 
@@ -166,7 +164,7 @@ func (rtr *RawTxReceipt) Convert() *TxReceipt {
 	return &TxReceipt{
 		TransactionHash:   rtr.TransactionHash,
 		TransactionIndex:  rtr.TransactionIndex,
-		BlockNumber:       util.DecodeHex(rtr.BlockNumber).Int64(),
+		BlockNumber:       util.DecodeHex(rtr.BlockNumber),
 		BlockHash:         rtr.BlockHash,
 		CumulativeGasUsed: util.DecodeHex(rtr.CumulativeGasUsed),
 		GasUsed:           util.DecodeHex(rtr.GasUsed),
@@ -178,16 +176,16 @@ func (rtr *RawTxReceipt) Convert() *TxReceipt {
 }
 
 type TxReceipt struct {
-	TransactionHash   string   `json:"transactionHash"`
-	TransactionIndex  string   `json:"transactionIndex"`
-	BlockNumber       int64    `json:"blockNumber"`
-	BlockHash         string   `json:"blockHash"`
-	CumulativeGasUsed *big.Int `json:"cumulativeGasUsed"`
-	GasUsed           *big.Int `json:"gasUsed"`
-	ContractAddress   string   `json:"contractAddress"`
-	Logs              []TxLog  `json:"logs"`
-	LogsBloom         string   `json:"logsBloom"`
-	Status            string   `json:"status"`
+	TransactionHash   string  `json:"transactionHash"`
+	TransactionIndex  string  `json:"transactionIndex"`
+	BlockNumber       uint64  `json:"blockNumber"`
+	BlockHash         string  `json:"blockHash"`
+	CumulativeGasUsed uint64  `json:"cumulativeGasUsed"`
+	GasUsed           uint64  `json:"gasUsed"`
+	ContractAddress   string  `json:"contractAddress"`
+	Logs              []TxLog `json:"logs"`
+	LogsBloom         string  `json:"logsBloom"`
+	Status            string  `json:"status"`
 }
 
 // FIXME: this is broken, also probably useless, setting everything to string
@@ -204,12 +202,12 @@ type TxLog struct {
 }
 
 type TokenTransfer struct {
-	BlockNumber int64    `bson:"blockNumber" json:"blockNumber"`
-	Hash        string   `bson:"hash" json:"hash"`
-	Timestamp   int64    `bson:"timestamp" json:"timestamp"`
-	From        string   `bson:"from" json:"from"`
-	To          string   `bson:"to" json:"to"`
-	Value       *big.Int `bson:"value" json:"value"`
-	Contract    string   `bson:"contract" json:"contract"`
-	Method      string   `bson:"method" json:"method"`
+	BlockNumber uint64 `bson:"blockNumber" json:"blockNumber"`
+	Hash        string `bson:"hash" json:"hash"`
+	Timestamp   uint64 `bson:"timestamp" json:"timestamp"`
+	From        string `bson:"from" json:"from"`
+	To          string `bson:"to" json:"to"`
+	Value       uint64 `bson:"value" json:"value"`
+	Contract    string `bson:"contract" json:"contract"`
+	Method      string `bson:"method" json:"method"`
 }

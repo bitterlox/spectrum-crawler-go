@@ -74,7 +74,7 @@ func (m *MongoDB) IsFirstRun() bool {
 	return false
 }
 
-func (m *MongoDB) IsPresent(height int64) bool {
+func (m *MongoDB) IsPresent(height uint64) bool {
 	var rbn models.RawBlockDetails
 	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&rbn)
 
@@ -93,7 +93,7 @@ func (m *MongoDB) IsPresent(height int64) bool {
 	return true
 }
 
-func (m *MongoDB) IsForkedBlock(height int64, hash string) bool {
+func (m *MongoDB) IsForkedBlock(height uint64, hash string) bool {
 	var rbn models.RawBlockDetails
 	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&rbn)
 

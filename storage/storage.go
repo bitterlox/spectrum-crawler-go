@@ -82,6 +82,44 @@ func (m *MongoDB) Init() {
 
 }
 
+func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string) error {
+
+	x := big.NewInt(0)
+	x.SetUint64(supply)
+
+	new_supply, err := m.GetSupply()
+
+	if err != nil {
+		return err
+	}
+
+	new_supply.Add(new_supply, x)
+
+	err = m.DB().C(models.STORE).Update(&bson.M{}, &bson.M{"supply": new_supply.String(), "price": price, "head": head})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *MongoDB) GetSupply() (*big.Int, error) {
+	var store models.Store
+
+	err := m.DB().C(models.STORE).Find(&bson.M{}).Limit(1).One(&store)
+
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	x := big.NewInt(0)
+
+	x.SetString(store.Supply, 10)
+
+	return x, nil
+}
+
 func (m *MongoDB) Ping() error {
 	return m.session.Ping()
 }
@@ -174,12 +212,20 @@ func (m *MongoDB) AddUncle(u *models.Uncle) error {
 	}
 	return nil
 }
+
+func (m *MongoDB) AddBlock(b *models.Block) error {
+	ss := m.db.C(models.BLOCKS)
+
+	if err := ss.Insert(b); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (m *MongoDB) UpdateSupply(minted *big.Int) {
 
 }
-func (m *MongoDB) AddBlock(block models.Block) {
 
-}
 func (m *MongoDB) AddForkedBlock() {
 
 }

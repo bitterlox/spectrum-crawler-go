@@ -68,8 +68,6 @@ func (c *Crawler) SyncLoop() {
 
 	for currentBlock = startBlock; !c.backend.IsPresent(currentBlock); currentBlock-- {
 
-		// TODO: This is not stoppings
-
 		block, err := c.rpc.GetBlockByHeight(currentBlock)
 
 		// if c.backend.IsPresent(currentBlock) && c.backend.IsForkedBlock(currentBlock, block.hash) {
@@ -97,7 +95,7 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	// TODO: think about forked block
 	defer wg.Done()
 
-	var avgGasPrice, txFees, uncleRewards uint64
+	var avgGasPrice, txFees, uncleRewards, minted uint64
 
 	blockReward := util.CaculateBlockReward(block.Number, len(block.Uncles))
 
@@ -114,16 +112,15 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	log.Printf("Block (%v): added %v transactions avgGas (%v), txFees (%v), uncleRewards (%v)", block.Number, len(block.Transactions), avgGasPrice, txFees, uncleRewards)
 
 	//
-	// minted := big.NewInt(0).Add(blockReward, unclesReward)
-	//
-	// c.backend.UpdateSupply(minted)
-	//
-	// block.BlockReward = blockReward.String()
-	// block.AvgGasPrice = avgGasPrice.String()
-	// block.TxFees = txFees.String()
-	// block.UnclesReward = unclesReward.String()
-	//
-	// c.backend.AddBlock(block)
+	minted = blockReward + uncleRewards
+
+	block.BlockReward = minted
+	block.AvgGasPrice = avgGasPrice
+	block.TxFees = txFees
+	block.UnclesReward = uncleRewards
+
+	c.backend.UpdateStore(minted, block, "1")
+	c.backend.AddBlock(block)
 
 }
 

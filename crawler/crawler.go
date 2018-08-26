@@ -66,7 +66,7 @@ func (c *Crawler) SyncLoop() {
 		log.Errorf("Error getting blockNo: %v", err)
 	}
 
-	for currentBlock = startBlock; currentBlock >= 0 && !c.backend.IsPresent(currentBlock); currentBlock-- {
+	for currentBlock = startBlock; !c.backend.IsPresent(currentBlock); currentBlock-- {
 
 		// TODO: This is not stoppings
 

@@ -47,7 +47,38 @@ func (m *MongoDB) Init() {
 	if err := ss.Insert(store); err != nil {
 		log.Fatalf("Could not init sysStore", err)
 	}
-	log.Warnf("Initialized sysStore")
+
+	genesis := &models.Block{
+		Number:          0,
+		Timestamp:       1485633600,
+		Transactions:    nil,
+		Hash:            "0x406f1b7dd39fca54d8c702141851ed8b755463ab5b560e6f19b963b4047418af",
+		ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
+		Sha3Uncles:      "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+		Miner:           "0x3333333333333333333333333333333333333333",
+		Difficulty:      "80000000000",
+		TotalDifficulty: "80000000000",
+		Size:            524,
+		GasUsed:         0,
+		GasLimit:        134217728,
+		Nonce:           "0x0000000000000888",
+		Uncles:          nil,
+		// Empty
+		BlockReward:  0,
+		UnclesReward: 0,
+		AvgGasPrice:  0,
+		TxFees:       0,
+		//
+		ExtraData: "0x4a756d6275636b734545",
+	}
+
+	gb := m.db.C(models.BLOCKS)
+
+	if err := gb.Insert(genesis); err != nil {
+		log.Fatalf("Could not init genesis block", err)
+	}
+
+	log.Warnf("Initialized sysStore, genesis")
 
 }
 
@@ -75,6 +106,11 @@ func (m *MongoDB) IsFirstRun() bool {
 }
 
 func (m *MongoDB) IsPresent(height uint64) bool {
+
+	if height == 0 {
+		return true
+	}
+
 	var rbn models.RawBlockDetails
 	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&rbn)
 

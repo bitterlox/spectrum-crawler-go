@@ -48,7 +48,7 @@ func (c *Crawler) Start() {
 			select {
 			case <-timer.C:
 				go c.SyncLoop()
-				//timer.Reset(interval)
+				timer.Reset(interval)
 			}
 		}
 	}()

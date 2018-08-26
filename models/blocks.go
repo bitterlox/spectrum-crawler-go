@@ -38,7 +38,6 @@ type RawBlock struct {
 }
 
 func (b *RawBlock) Convert() *Block {
-	//log.Debugf("raw block: %+v", b)
 	return &Block{
 		Number:          util.DecodeHex(b.Number),
 		Timestamp:       util.DecodeHex(b.Timestamp),
@@ -87,18 +86,3 @@ type Block struct {
 	//
 	ExtraData string `bson:"extraData" json:"extraData"`
 }
-
-// totalDifficulty:
-// 	0x9423e4f040bcf071
-// gasUsed:
-// 	0x0
-// number:
-// 	0x8b0c7
-// timestamp:
-// 	0x5b7ef868
-// difficulty:
-// 	0xee9d8d30d76
-// size:
-// 	0x223
-// gasLimit:
-// 	0x79d60c

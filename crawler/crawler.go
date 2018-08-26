@@ -70,15 +70,17 @@ func (c *Crawler) SyncLoop() {
 
 		block, err := c.rpc.GetBlockByHeight(currentBlock)
 
-		// if c.backend.IsPresent(currentBlock) && c.backend.IsForkedBlock(currentBlock, block.hash) {
-		// 	go c.SyncForkedBlock(block, &wg)
-		// }
-
 		if err != nil {
 			log.Errorf("Error getting block: %v", err)
 		}
 
-		go c.Sync(block, &wg)
+		// TODO: try to test this
+
+		if c.backend.IsPresent(currentBlock) && c.backend.IsForkedBlock(currentBlock, block.Hash) {
+			go c.SyncForkedBlock(block, &wg)
+		} else {
+			go c.Sync(block, &wg)
+		}
 
 		wg.Add(1)
 		routines++
@@ -88,18 +90,35 @@ func (c *Crawler) SyncLoop() {
 			routines = 0
 		}
 	}
+}
+
+func (c *Crawler) SyncForkedBlock(block *models.Block, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	height := block.Number
+
+	dbblock, err := c.backend.GetBlock(height)
+
+	if err != nil {
+		log.Errorf("Error getting forked block: %v", err)
+	}
+
+	c.backend.AddForkedBlock(dbblock)
+
+	c.backend.UpdateStore(dbblock.BlockReward, block, "1", true)
+
+	c.backend.ReorgPurge(height)
+
+	c.Sync(block, wg)
 
 }
 
 func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
-	// TODO: think about forked block
 	defer wg.Done()
 
 	var avgGasPrice, txFees, uncleRewards, minted uint64
 
 	blockReward := util.CaculateBlockReward(block.Number, len(block.Uncles))
-
-	log.Printf("block (%v): %v", block.Number, blockReward)
 
 	if len(block.Transactions) > 0 {
 		avgGasPrice, txFees = c.ProcessTransactions(block.Transactions, block.Timestamp)
@@ -109,9 +128,6 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 		uncleRewards = c.ProcessUncles(block.Uncles, block.Number)
 	}
 
-	log.Printf("Block (%v): added %v transactions avgGas (%v), txFees (%v), uncleRewards (%v)", block.Number, len(block.Transactions), avgGasPrice, txFees, uncleRewards)
-
-	//
 	minted = blockReward + uncleRewards
 
 	block.BlockReward = minted
@@ -119,8 +135,10 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	block.TxFees = txFees
 	block.UnclesReward = uncleRewards
 
-	c.backend.UpdateStore(minted, block, "1")
+	c.backend.UpdateStore(minted, block, "1", false)
 	c.backend.AddBlock(block)
+
+	log.Printf("Block (%v): added %v transactions, %v uncles", block.Number, len(block.Transactions), len(block.Uncles))
 
 }
 

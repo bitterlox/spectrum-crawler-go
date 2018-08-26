@@ -82,7 +82,7 @@ func (m *MongoDB) Init() {
 
 }
 
-func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string) error {
+func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string, forkedBlock bool) error {
 
 	x := big.NewInt(0)
 	x.SetUint64(supply)
@@ -93,7 +93,12 @@ func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string) e
 		return err
 	}
 
-	new_supply.Add(new_supply, x)
+	switch forkedBlock {
+	case true:
+		new_supply.Sub(new_supply, x)
+	case false:
+		new_supply.Add(new_supply, x)
+	}
 
 	err = m.DB().C(models.STORE).Update(&bson.M{}, &bson.M{"supply": new_supply.String(), "price": price, "head": head})
 
@@ -120,6 +125,44 @@ func (m *MongoDB) GetSupply() (*big.Int, error) {
 	return x, nil
 }
 
+func (m *MongoDB) GetBlock(height uint64) (*models.Block, error) {
+	var block models.Block
+
+	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&block)
+
+	if err != nil {
+		return &models.Block{}, err
+	}
+
+	return &block, nil
+}
+
+func (m *MongoDB) ReorgPurge(height uint64) error {
+	selector := &bson.M{"number": height}
+
+	err := m.db.C(models.BLOCKS).Remove(selector)
+	if err != nil {
+		return err
+	}
+
+	err = m.db.C(models.TXNS).Remove(selector)
+	if err != nil {
+		return err
+	}
+
+	err = m.db.C(models.TRANSFERS).Remove(selector)
+	if err != nil {
+		return err
+	}
+
+	err = m.db.C(models.UNCLES).Remove(selector)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *MongoDB) Ping() error {
 	return m.session.Ping()
 }
@@ -130,6 +173,7 @@ func (m *MongoDB) DB() *mgo.Database {
 
 func (m *MongoDB) IsFirstRun() bool {
 	var store models.Store
+
 	err := m.DB().C(models.STORE).Find(&bson.M{}).Limit(1).One(&store)
 
 	if err != nil {
@@ -222,10 +266,11 @@ func (m *MongoDB) AddBlock(b *models.Block) error {
 	return nil
 }
 
-func (m *MongoDB) UpdateSupply(minted *big.Int) {
+func (m *MongoDB) AddForkedBlock(b *models.Block) error {
+	ss := m.db.C(models.REORGS)
 
-}
-
-func (m *MongoDB) AddForkedBlock() {
-
+	if err := ss.Insert(b); err != nil {
+		return err
+	}
+	return nil
 }

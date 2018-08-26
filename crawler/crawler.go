@@ -168,8 +168,6 @@ func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uin
 
 		v := v.Convert()
 
-		log.Debugf("tx: %+v", v)
-
 		receipt, err := c.rpc.GetTxReceipt(v.Hash)
 
 		if err != nil {

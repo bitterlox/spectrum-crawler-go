@@ -27,7 +27,7 @@ func DecodeHex(str string) uint64 {
 	// 	str = str[2:]
 	// }
 
-	i, err := strconv.ParseUint(str[2:], 16, 64)
+	i, err := strconv.ParseUint(str, 16, 64)
 
 	if err != nil {
 		log.Errorf("Couldn't decode hex (%v): %v", str, err)

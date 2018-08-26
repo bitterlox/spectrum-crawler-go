@@ -109,6 +109,10 @@ func (c *Crawler) SyncForkedBlock(block *models.Block, wg *sync.WaitGroup) {
 
 	c.backend.ReorgPurge(height)
 
+	log.Warnf("Reorg detected at block: %v", block.Number)
+	log.Warnf("HEAD - %v", block.Number)
+	log.Warnf("FORK - %v", dbblock.Number)
+
 	c.Sync(block, wg)
 
 }

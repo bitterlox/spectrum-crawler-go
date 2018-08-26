@@ -74,6 +74,10 @@ func (tx *Transaction) IsTokenTransfer() bool {
 		return false
 	}
 
+	if len(tx.Input) < 10 {
+		log.Fatalf("token transfer crash test (%v): txhash (%v): %v", tx.Input, tx.BlockHash, tx.Hash)
+	}
+
 	switch tx.Input[:10] {
 	case "0xa9059cbb":
 		return true

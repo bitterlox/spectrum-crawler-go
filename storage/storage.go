@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"math/big"
+	"time"
+
 	"github.com/Bitterlox/spectrum-crawler-go/models"
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -32,6 +35,22 @@ func NewConnection(cfg *Config) (*MongoDB, error) {
 	return &MongoDB{session, session.DB("")}, nil
 }
 
+func (m *MongoDB) Init() {
+	store := &models.Store{
+		Timestamp: time.Now().Unix(),
+		Symbol:    "UBQ",
+		Supply:    "36108073197716300000000000",
+	}
+
+	ss := m.db.C(models.STORE)
+
+	if err := ss.Insert(store); err != nil {
+		log.Fatalf("Could not init sysStore", err)
+	}
+	log.Warnf("Initialized sysStore")
+
+}
+
 func (m *MongoDB) Ping() error {
 	return m.session.Ping()
 }
@@ -56,8 +75,75 @@ func (m *MongoDB) IsFirstRun() bool {
 }
 
 func (m *MongoDB) IsPresent(height int64) bool {
-	if height == height-15 {
+	var rbn models.RawBlockDetails
+	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&rbn)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			return false
+		} else {
+			log.Errorf("Error checking for block in db: %v", err)
+		}
+	}
+
+	if number, _ := rbn.Convert(); number == height {
+		return false
+	}
+
+	return true
+}
+
+func (m *MongoDB) IsForkedBlock(height int64, hash string) bool {
+	var rbn models.RawBlockDetails
+	err := m.DB().C(models.BLOCKS).Find(&bson.M{"number": height}).Limit(1).One(&rbn)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			return false
+		} else {
+			log.Errorf("Error checking for block in db: %v", err)
+		}
+	}
+
+	if bn, contendentHash := rbn.Convert(); bn == height && contendentHash != hash {
 		return true
 	}
+
 	return false
+}
+
+func (m *MongoDB) AddTransaction(tx *models.Transaction) error {
+	ss := m.db.C(models.TXNS)
+
+	if err := ss.Insert(tx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MongoDB) AddTokenTransfer(tt *models.TokenTransfer) error {
+	ss := m.db.C(models.TRANSFERS)
+
+	if err := ss.Insert(tt); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MongoDB) AddUncle(u *models.Uncle) error {
+	ss := m.db.C(models.UNCLES)
+
+	if err := ss.Insert(u); err != nil {
+		return err
+	}
+	return nil
+}
+func (m *MongoDB) UpdateSupply(minted *big.Int) {
+
+}
+func (m *MongoDB) AddBlock(block models.Block) {
+
+}
+func (m *MongoDB) AddForkedBlock() {
+
 }

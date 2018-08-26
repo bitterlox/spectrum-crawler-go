@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"math/big"
 	"sync"
 	"time"
 
@@ -9,12 +10,13 @@ import (
 	"github.com/Bitterlox/spectrum-crawler-go/models"
 	"github.com/Bitterlox/spectrum-crawler-go/rpc"
 	"github.com/Bitterlox/spectrum-crawler-go/storage"
+	"github.com/Bitterlox/spectrum-crawler-go/util"
 )
 
 type Config struct {
 	Enabled     bool   `json:"enabled"`
 	Interval    string `json:"interval"`
-	maxRoutines int    `json:"routines"`
+	MaxRoutines int    `json:"routines"`
 }
 
 type Crawler struct {
@@ -31,7 +33,7 @@ func (c *Crawler) Start() {
 	log.Println("Starting block Crawler")
 
 	if c.backend.IsFirstRun() {
-		c.Init()
+		c.backend.Init()
 	}
 
 	interval, err := time.ParseDuration(c.cfg.Interval)
@@ -47,7 +49,7 @@ func (c *Crawler) Start() {
 			select {
 			case <-timer.C:
 				go c.SyncLoop()
-				timer.Reset(interval)
+				//timer.Reset(interval)
 			}
 		}
 	}()
@@ -56,44 +58,152 @@ func (c *Crawler) Start() {
 
 func (c *Crawler) SyncLoop() {
 	var wg sync.WaitGroup
-	var startBlock int64
+	var currentBlock int64
+	var routines int
 
-	block, err := c.rpc.GetLatestBlock()
+	startBlock, err := c.rpc.LatestBlockNumber()
 
 	if err != nil {
-		log.Errorf("Error getting blockno: %v", err)
+		log.Errorf("Error getting blockNo: %v", err)
 	}
 
-	wg.Add(c.cfg.maxRoutines)
+	for currentBlock = startBlock; currentBlock >= 0 && !c.backend.IsPresent(currentBlock); currentBlock-- {
 
-	for startBlock = block.Number; c.backend.IsPresent(startBlock); startBlock-- {
+		// TODO: This is not stoppings
+
+		block, err := c.rpc.GetBlockByHeight(currentBlock)
+
+		// if c.backend.IsPresent(currentBlock) && c.backend.IsForkedBlock(currentBlock, block.hash) {
+		// 	go c.SyncForkedBlock(block, &wg)
+		// }
+
+		if err != nil {
+			log.Errorf("Error getting block: %v", err)
+		}
+
 		go c.Sync(block, &wg)
+
+		wg.Add(1)
+		routines++
+
+		if routines == c.cfg.MaxRoutines {
+			wg.Wait()
+			routines = 0
+		}
 	}
 
-	wg.Wait()
 }
 
 func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
+	// TODO: think about forked block
+	defer wg.Done()
 
-	log.Printf("block: %+v", block.Number)
+	var avgGasPrice, txFees, uncleRewards *big.Int
 
-	time.Sleep(30 * time.Second)
+	blockReward := util.CaculateBlockReward(block.Number, len(block.Uncles))
 
-	wg.Done()
+	log.Printf("block (%v): %v", block.Number, blockReward)
+
+	if len(block.Transactions) > 0 {
+		avgGasPrice, txFees = c.ProcessTransactions(block.Transactions, block.Timestamp)
+	}
+
+	if len(block.Uncles) > 0 {
+		uncleRewards = c.ProcessUncles(block.Uncles, block.Number)
+	}
+
+	log.Printf("Block (%v): added %v transactions avgGas (%v), txFees (%v), uncleRewards (%v)", block.Number, len(block.Transactions), avgGasPrice, txFees, uncleRewards)
+
+	//
+	// minted := big.NewInt(0).Add(blockReward, unclesReward)
+	//
+	// c.backend.UpdateSupply(minted)
+	//
+	// block.BlockReward = blockReward.String()
+	// block.AvgGasPrice = avgGasPrice.String()
+	// block.TxFees = txFees.String()
+	// block.UnclesReward = unclesReward.String()
+	//
+	// c.backend.AddBlock(block)
+
 }
 
-func (c *Crawler) Init() {
-	store := &models.Store{
-		Timestamp: time.Now().Unix(),
-		Symbol:    "UBQ",
-		Supply:    "36108073197716300000000000",
+func (c *Crawler) ProcessUncles(uncles []string, height int64) *big.Int {
+
+	uncleRewards := big.NewInt(0)
+
+	for k, _ := range uncles {
+
+		uncle, err := c.rpc.GetUncleByBlockNumberAndIndex(height, k)
+
+		if err != nil {
+			log.Errorf("Error getting uncle: %v", err)
+			return big.NewInt(0)
+
+		}
+
+		// TODO: broken func
+		uncleReward := util.CaculateUncleReward(height, uncle.Number)
+
+		uncleRewards.Add(uncleRewards, uncleReward)
+
+		uncle.BlockNumber = height
+		uncle.Reward = uncleReward
+
+		err = c.backend.AddUncle(uncle)
+
+		if err != nil {
+			log.Errorf("Error inserting tx into backend: %v", err)
+			return big.NewInt(0)
+		}
+
 	}
+	return uncleRewards
+}
 
-	ss := c.backend.DB().C(models.STORE)
+func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp int64) (*big.Int, *big.Int) {
 
-	if err := ss.Insert(store); err != nil {
-		log.Fatalf("Could not init sysStore", err)
+	avgGasPrice := big.NewInt(0)
+	txFees := big.NewInt(0)
+
+	for _, v := range txs {
+
+		v := v.Convert()
+
+		log.Debugf("tx: %+v", v)
+
+		receipt, err := c.rpc.GetTxReceipt(v.Hash)
+
+		if err != nil {
+			log.Errorf("Error getting tx receipt: %v", err)
+		}
+
+		avgGasPrice.Add(avgGasPrice, v.Gas)
+
+		txFees.Add(txFees, big.NewInt(0).Mul(v.GasPrice, receipt.GasUsed))
+
+		v.Timestamp = timestamp
+		v.GasUsed = receipt.GasUsed
+		v.ContractAddress = receipt.ContractAddress
+		v.Logs = receipt.Logs
+
+		if v.IsTokenTransfer() {
+
+			tktx := v.GetTokenTransfer()
+
+			tktx.BlockNumber = v.BlockNumber
+			tktx.Hash = v.Hash
+			tktx.Timestamp = v.Timestamp
+
+			c.backend.AddTokenTransfer(tktx)
+		}
+
+		err = c.backend.AddTransaction(v)
+
+		if err != nil {
+			log.Errorf("Error inserting tx into backend: %v", err)
+		}
+
 	}
-	log.Warnf("Initialized systore")
-
+	return avgGasPrice, txFees
 }

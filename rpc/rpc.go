@@ -86,7 +86,7 @@ func (r *RPCClient) doPost(method string, params interface{}) (*JSONRpcResp, err
 }
 
 func (r *RPCClient) GetLatestBlock() (*models.Block, error) {
-	bn, err := r.latestBlockNumber()
+	bn, err := r.LatestBlockNumber()
 
 	if err != nil {
 		return nil, err
@@ -106,9 +106,23 @@ func (r *RPCClient) GetBlockByHash(hash string) (*models.Block, error) {
 	return r.getBlockBy("eth_getBlockByHash", params)
 }
 
-func (r *RPCClient) GetUncleByBlockNumberAndIndex(height int64, index int) (*models.Block, error) {
+func (r *RPCClient) GetUncleByBlockNumberAndIndex(height int64, index int) (*models.Uncle, error) {
 	params := []interface{}{fmt.Sprintf("0x%x", height), fmt.Sprintf("0x%x", index)}
-	return r.getBlockBy("eth_getUncleByBlockNumberAndIndex", params)
+	return r.getUncleBy("eth_getUncleByBlockNumberAndIndex", params)
+}
+
+func (r *RPCClient) getUncleBy(method string, params []interface{}) (*models.Uncle, error) {
+	rpcResp, err := r.doPost(method, params)
+	if err != nil {
+		return nil, err
+	}
+	if rpcResp.Result != nil {
+		var reply *models.RawUncle
+		err = json.Unmarshal(*rpcResp.Result, &reply)
+
+		return reply.Convert(), err
+	}
+	return nil, nil
 }
 
 func (r *RPCClient) getBlockBy(method string, params []interface{}) (*models.Block, error) {
@@ -118,18 +132,14 @@ func (r *RPCClient) getBlockBy(method string, params []interface{}) (*models.Blo
 	}
 	if rpcResp.Result != nil {
 		var reply *models.RawBlock
-		var test interface{}
 		err = json.Unmarshal(*rpcResp.Result, &reply)
-		err = json.Unmarshal(*rpcResp.Result, &test)
-
-		log.Debugf("%+v", test)
 
 		return reply.Convert(), err
 	}
 	return nil, nil
 }
 
-func (r *RPCClient) latestBlockNumber() (int64, error) {
+func (r *RPCClient) LatestBlockNumber() (int64, error) {
 	rpcResp, err := r.doPost("eth_blockNumber", []interface{}{""})
 
 	if err != nil {
@@ -139,8 +149,21 @@ func (r *RPCClient) latestBlockNumber() (int64, error) {
 	if rpcResp.Result != nil {
 		var reply string
 		err = json.Unmarshal(*rpcResp.Result, &reply)
-		return util.DecodeHex(reply), err
+		return util.DecodeHex(reply).Int64(), err
 	}
 	return 0, nil
 
+}
+
+func (r *RPCClient) GetTxReceipt(hash string) (*models.TxReceipt, error) {
+	rpcResp, err := r.doPost("eth_getTransactionReceipt", []string{hash})
+	if err != nil {
+		return nil, err
+	}
+	if rpcResp.Result != nil {
+		var reply *models.RawTxReceipt
+		err = json.Unmarshal(*rpcResp.Result, &reply)
+		return reply.Convert(), err
+	}
+	return nil, nil
 }

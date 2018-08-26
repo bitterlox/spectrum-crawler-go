@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/ubiq/go-ubiq/common/hexutil"
 )
 
 func DecodeHex(str string) uint64 {
@@ -20,13 +21,6 @@ func DecodeHex(str string) uint64 {
 		str = str[2:]
 	}
 
-	// SOLUTION
-	// https://play.golang.org/p/winrs9A7YHP
-	//
-	// if str[:2] == "0x" {
-	// 	str = str[2:]
-	// }
-
 	i, err := strconv.ParseUint(str, 16, 64)
 
 	if err != nil {
@@ -34,29 +28,16 @@ func DecodeHex(str string) uint64 {
 		return 0
 	}
 
-	// i, err := hexutil.DecodeBig(str)
-	//
-	// if err != nil {
-	// 	if err == hexutil.ErrLeadingZero {
-	//
-	// 		// Backup conversion for 0-padded strings
-	//
-	// 		log.Debugf("util: decodeHex: using backup conversion method (%v)", str)
-	//
-	// 		x, error := strconv.ParseInt(str[2:], 16, 64)
-	//
-	// 		if error != nil {
-	// 			log.Errorf("Couldn't decode hex (%v): %v", str, err)
-	// 		}
-	//
-	// 		return big.NewInt(x)
-	//
-	// 	} else {
-	// 		log.Errorf("Couldn't decode hex (%v): %v", str, err)
-	// 		return big.NewInt(0)
-	// 	}
-	// }
 	return i
+}
+
+func DecodeValueHex(val string) string {
+	x, err := hexutil.DecodeBig(val)
+
+	if err != nil {
+		log.Errorf("ErrorDecodeValueHex (%v): %v", val, err)
+	}
+	return x.String()
 }
 
 func InputParamsToAddress(str string) string {

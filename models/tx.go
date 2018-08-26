@@ -31,7 +31,7 @@ func (rt *RawTransaction) Convert() *Transaction {
 		// Timestamp
 		//
 		Input:            rt.Input,
-		Value:            util.DecodeHex(rt.Value),
+		Value:            util.DecodeValueHex(rt.Value),
 		Gas:              util.DecodeHex(rt.Gas),
 		GasPrice:         util.DecodeHex(rt.GasPrice),
 		Nonce:            rt.Nonce,
@@ -54,7 +54,7 @@ type Transaction struct {
 	Timestamp uint64 `bson:"timestamp" json:"timestamp"`
 	//
 	Input            string `bson:"input" json:"input"`
-	Value            uint64 `bson:"value" json:"value"`
+	Value            string `bson:"value" json:"value"`
 	Gas              uint64 `bson:"gas" json:"gas"`
 	GasPrice         uint64 `bson:"gasPrice" json:"gasPrice"`
 	Nonce            string `bson:"nonce" json:"nonce"`

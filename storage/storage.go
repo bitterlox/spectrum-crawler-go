@@ -51,7 +51,7 @@ func (m *MongoDB) Init() {
 	genesis := &models.Block{
 		Number:          0,
 		Timestamp:       1485633600,
-		Transactions:    nil,
+		Txs:             0,
 		Hash:            "0x406f1b7dd39fca54d8c702141851ed8b755463ab5b560e6f19b963b4047418af",
 		ParentHash:      "0x0000000000000000000000000000000000000000000000000000000000000000",
 		Sha3Uncles:      "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
@@ -62,7 +62,7 @@ func (m *MongoDB) Init() {
 		GasUsed:         0,
 		GasLimit:        134217728,
 		Nonce:           "0x0000000000000888",
-		Uncles:          nil,
+		UncleNo:         0,
 		// Empty
 		BlockReward:  0,
 		UnclesReward: 0,
@@ -75,11 +75,27 @@ func (m *MongoDB) Init() {
 	gb := m.db.C(models.BLOCKS)
 
 	if err := gb.Insert(genesis); err != nil {
-		log.Fatalf("Could not init genesis block", err)
+		log.Fatalf("Could not init genesis block: %v", err)
 	}
 
 	log.Warnf("Initialized sysStore, genesis")
 
+}
+
+func (m *MongoDB) IsFirstRun() bool {
+	var store models.Store
+
+	err := m.DB().C(models.STORE).Find(&bson.M{}).Limit(1).One(&store)
+
+	if err != nil {
+		if err.Error() == "not found" {
+			return true
+		} else {
+			log.Fatalf("Error during initialization: %v", err)
+		}
+	}
+
+	return false
 }
 
 func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string, forkedBlock bool) error {
@@ -169,22 +185,6 @@ func (m *MongoDB) Ping() error {
 
 func (m *MongoDB) DB() *mgo.Database {
 	return m.db
-}
-
-func (m *MongoDB) IsFirstRun() bool {
-	var store models.Store
-
-	err := m.DB().C(models.STORE).Find(&bson.M{}).Limit(1).One(&store)
-
-	if err != nil {
-		if err.Error() == "not found" {
-			return true
-		} else {
-			log.Fatalf("Error during initialization: %v", err)
-		}
-	}
-
-	return false
 }
 
 func (m *MongoDB) IsPresent(height uint64) bool {

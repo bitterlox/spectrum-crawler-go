@@ -139,8 +139,17 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	block.TxFees = txFees
 	block.UnclesReward = uncleRewards
 
-	c.backend.UpdateStore(minted, block, "1", false)
-	c.backend.AddBlock(block)
+	err := c.backend.UpdateStore(minted, block, "1", false)
+
+	if err != nil {
+		log.Errorf("Error updating sysStore: %v", err)
+	}
+
+	err = c.backend.AddBlock(block)
+
+	if err != nil {
+		log.Errorf("Error adding block: %v", err)
+	}
 
 	log.Printf("Block (%v): added %v transactions, %v uncles", block.Number, len(block.Transactions), len(block.Uncles))
 
@@ -160,7 +169,6 @@ func (c *Crawler) ProcessUncles(uncles []string, height uint64) uint64 {
 
 		}
 
-		// TODO: broken func
 		uncleReward := util.CaculateUncleReward(height, uncle.Number)
 
 		uncleRewards += uncleReward
@@ -171,7 +179,7 @@ func (c *Crawler) ProcessUncles(uncles []string, height uint64) uint64 {
 		err = c.backend.AddUncle(uncle)
 
 		if err != nil {
-			log.Errorf("Error inserting tx into backend: %v", err)
+			log.Errorf("Error inserting uncle into backend: %v", err)
 			return 0
 		}
 

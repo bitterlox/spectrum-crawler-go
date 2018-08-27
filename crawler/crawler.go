@@ -1,6 +1,7 @@
 package crawler
 
 import (
+	"math/big"
 	"sync"
 	"time"
 
@@ -120,7 +121,10 @@ func (c *Crawler) SyncForkedBlock(block *models.Block, wg *sync.WaitGroup) {
 func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var avgGasPrice, txFees, uncleRewards, minted uint64
+	uncleRewards := big.NewInt(0)
+	avgGasPrice := big.NewInt(0)
+	txFees := big.NewInt(0)
+	minted := big.NewInt(0)
 
 	blockReward := util.CaculateBlockReward(block.Number, len(block.Uncles))
 
@@ -132,14 +136,14 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 		uncleRewards = c.ProcessUncles(block.Uncles, block.Number)
 	}
 
-	minted = blockReward + uncleRewards
+	minted.Add(blockReward, uncleRewards)
 
-	block.BlockReward = minted
-	block.AvgGasPrice = avgGasPrice
-	block.TxFees = txFees
-	block.UnclesReward = uncleRewards
+	block.BlockReward = minted.String()
+	block.AvgGasPrice = avgGasPrice.String()
+	block.TxFees = txFees.String()
+	block.UnclesReward = uncleRewards.String()
 
-	err := c.backend.UpdateStore(minted, block, "1", false)
+	err := c.backend.UpdateStore(minted.String(), block, "1", false)
 
 	if err != nil {
 		log.Errorf("Error updating sysStore: %v", err)
@@ -155,9 +159,9 @@ func (c *Crawler) Sync(block *models.Block, wg *sync.WaitGroup) {
 
 }
 
-func (c *Crawler) ProcessUncles(uncles []string, height uint64) uint64 {
+func (c *Crawler) ProcessUncles(uncles []string, height uint64) *big.Int {
 
-	var uncleRewards uint64
+	uncleRewards := big.NewInt(0)
 
 	for k, _ := range uncles {
 
@@ -165,31 +169,32 @@ func (c *Crawler) ProcessUncles(uncles []string, height uint64) uint64 {
 
 		if err != nil {
 			log.Errorf("Error getting uncle: %v", err)
-			return 0
+			return big.NewInt(0)
 
 		}
 
 		uncleReward := util.CaculateUncleReward(height, uncle.Number)
 
-		uncleRewards += uncleReward
+		uncleRewards.Add(uncleRewards, uncleReward)
 
 		uncle.BlockNumber = height
-		uncle.Reward = uncleReward
+		uncle.Reward = uncleReward.String()
 
 		err = c.backend.AddUncle(uncle)
 
 		if err != nil {
 			log.Errorf("Error inserting uncle into backend: %v", err)
-			return 0
+			return big.NewInt(0)
 		}
 
 	}
 	return uncleRewards
 }
 
-func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uint64) (uint64, uint64) {
+func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uint64) (*big.Int, *big.Int) {
 
-	var avgGasPrice, txFees uint64
+	avgGasPrice := big.NewInt(0)
+	txFees := big.NewInt(0)
 
 	for _, v := range txs {
 
@@ -201,9 +206,15 @@ func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uin
 			log.Errorf("Error getting tx receipt: %v", err)
 		}
 
-		avgGasPrice += v.Gas
+		avgGasPrice.Add(avgGasPrice, big.NewInt(0).SetUint64(v.Gas))
 
-		txFees += (v.GasPrice * receipt.GasUsed)
+		gasprice, ok := big.NewInt(0).SetString(v.GasPrice, 10)
+
+		if !ok {
+			log.Errorf("Crawler: processTx: couldn't set gasprice (%v): %v", gasprice, ok)
+		}
+
+		txFees.Add(txFees, big.NewInt(0).Mul(gasprice, big.NewInt(0).SetUint64(receipt.GasUsed)))
 
 		v.Timestamp = timestamp
 		v.GasUsed = receipt.GasUsed
@@ -228,5 +239,5 @@ func (c *Crawler) ProcessTransactions(txs []models.RawTransaction, timestamp uin
 		}
 
 	}
-	return avgGasPrice / uint64(len(txs)), txFees
+	return avgGasPrice.Div(avgGasPrice, big.NewInt(int64(len(txs)))), txFees
 }

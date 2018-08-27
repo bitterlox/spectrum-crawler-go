@@ -1,6 +1,7 @@
 package util
 
 import (
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -44,46 +45,53 @@ func InputParamsToAddress(str string) string {
 	return "0x" + strings.ToLower(str[24:])
 }
 
-func CaculateBlockReward(height uint64, uncleNo int) uint64 {
+func CaculateBlockReward(height uint64, uncleNo int) *big.Int {
+
 	baseReward := baseBlockReward(height)
-	var uncleRewards uint64
+
+	uncleRewards := big.NewInt(0)
 
 	if uncleNo > 0 {
-		uncleRewards = baseReward / uint64(32*uncleNo)
+		uncleRewards = uncleRewards.Div(baseReward, big.NewInt(int64(32*uncleNo)))
 	}
 
-	baseReward += uncleRewards
+	baseReward = baseReward.Add(baseReward, uncleRewards)
 	return baseReward
 }
 
-func CaculateUncleReward(height uint64, uncleHeight uint64) uint64 {
+func CaculateUncleReward(height uint64, uncleHeight uint64) *big.Int {
 	baseReward := baseBlockReward(height)
-	uncleRewards := (((uncleHeight + 2) - height) * baseReward) / 2
-	if uncleRewards < 0 {
-		return 0
+
+	uncleRewards := big.NewInt(0)
+
+	uncleRewards.Mul(big.NewInt(int64((uncleHeight+2)-height)), baseReward)
+	uncleRewards.Div(uncleRewards, big.NewInt(2))
+
+	if uncleRewards.Cmp(big.NewInt(0)) == -1 {
+		return big.NewInt(0)
 	}
 	return uncleRewards
 }
 
-func baseBlockReward(height uint64) uint64 {
+func baseBlockReward(height uint64) *big.Int {
 	if height > 2508545 {
-		return 1000000000000000000
+		return big.NewInt(1000000000000000000)
 	} else if height > 2150181 {
-		return 2000000000000000000
+		return big.NewInt(2000000000000000000)
 	} else if height > 1791818 {
-		return 3000000000000000000
+		return big.NewInt(3000000000000000000)
 	} else if height > 1433454 {
-		return 4000000000000000000
+		return big.NewInt(4000000000000000000)
 	} else if height > 1075090 {
-		return 5000000000000000000
+		return big.NewInt(5000000000000000000)
 	} else if height > 716727 {
-		return 6000000000000000000
+		return big.NewInt(6000000000000000000)
 	} else if height > 358363 {
-		return 7000000000000000000
+		return big.NewInt(7000000000000000000)
 	} else if height > 0 {
-		return 8000000000000000000
+		return big.NewInt(8000000000000000000)
 	} else {
 		// genesis
-		return 0
+		return big.NewInt(0)
 	}
 }

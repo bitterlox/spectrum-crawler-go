@@ -33,7 +33,7 @@ func (rt *RawTransaction) Convert() *Transaction {
 		Input:            rt.Input,
 		Value:            util.DecodeValueHex(rt.Value),
 		Gas:              util.DecodeHex(rt.Gas),
-		GasPrice:         util.DecodeHex(rt.GasPrice),
+		GasPrice:         util.DecodeValueHex(rt.GasPrice),
 		Nonce:            rt.Nonce,
 		TransactionIndex: util.DecodeHex(rt.TransactionIndex),
 		From:             rt.From,
@@ -47,16 +47,14 @@ func (rt *RawTransaction) Convert() *Transaction {
 }
 
 type Transaction struct {
-	BlockHash   string `bson:"blockHash" json:"blockHash"`
-	BlockNumber uint64 `bson:"blockNumber" json:"blockNumber"`
-	Hash        string `bson:"hash" json:"hash"`
-	//
-	Timestamp uint64 `bson:"timestamp" json:"timestamp"`
-	//
+	BlockHash        string `bson:"blockHash" json:"blockHash"`
+	BlockNumber      uint64 `bson:"blockNumber" json:"blockNumber"`
+	Hash             string `bson:"hash" json:"hash"`
+	Timestamp        uint64 `bson:"timestamp" json:"timestamp"`
 	Input            string `bson:"input" json:"input"`
 	Value            string `bson:"value" json:"value"`
 	Gas              uint64 `bson:"gas" json:"gas"`
-	GasPrice         uint64 `bson:"gasPrice" json:"gasPrice"`
+	GasPrice         string `bson:"gasPrice" json:"gasPrice"`
 	Nonce            string `bson:"nonce" json:"nonce"`
 	TransactionIndex uint64 `bson:"transactionIndex" json:"transactionIndex"`
 	From             string `bson:"from" json:"from"`

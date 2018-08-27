@@ -46,5 +46,5 @@ type Uncle struct {
 	GasUsed     uint64 `bson:"gasUsed" json:"gasUsed"`
 	GasLimit    uint64 `bson:"gasLimit" json:"gasLimit"`
 	Timestamp   uint64 `bson:"timestamp" json:"timestamp"`
-	Reward      uint64 `bson:"reward" json:"reward"`
+	Reward      string `bson:"reward" json:"reward"`
 }

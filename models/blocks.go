@@ -56,10 +56,10 @@ func (b *RawBlock) Convert() *Block {
 		Uncles:          b.Uncles,
 		UncleNo:         len(b.Uncles),
 		// Empty
-		BlockReward:  0,
-		UnclesReward: 0,
-		AvgGasPrice:  0,
-		TxFees:       0,
+		BlockReward:  "0",
+		UnclesReward: "0",
+		AvgGasPrice:  "0",
+		TxFees:       "0",
 		//
 		ExtraData: b.ExtraData,
 	}
@@ -88,11 +88,11 @@ type Block struct {
 	// Same as Txs
 	Uncles  []string `bson:"-" json:"-"`
 	UncleNo int      `bson:"uncles" json:"uncles"`
-	//
-	BlockReward  uint64 `bson:"blockReward" json:"blockReward"`
-	UnclesReward uint64 `bson:"unclesReward" json:"unclesReward"`
-	AvgGasPrice  uint64 `bson:"avgGasPrice" json:"avgGasPrice"`
-	TxFees       uint64 `bson:"txFees" json:"txFees"`
+	// TODO: These should be strings
+	BlockReward  string `bson:"blockReward" json:"blockReward"`
+	UnclesReward string `bson:"unclesReward" json:"unclesReward"`
+	AvgGasPrice  string `bson:"avgGasPrice" json:"avgGasPrice"`
+	TxFees       string `bson:"txFees" json:"txFees"`
 	//
 	ExtraData string `bson:"extraData" json:"extraData"`
 }

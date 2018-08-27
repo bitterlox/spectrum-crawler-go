@@ -64,10 +64,10 @@ func (m *MongoDB) Init() {
 		Nonce:           "0x0000000000000888",
 		UncleNo:         0,
 		// Empty
-		BlockReward:  0,
-		UnclesReward: 0,
-		AvgGasPrice:  0,
-		TxFees:       0,
+		BlockReward:  "0",
+		UnclesReward: "0",
+		AvgGasPrice:  "0",
+		TxFees:       "0",
 		//
 		ExtraData: "0x4a756d6275636b734545",
 	}
@@ -98,10 +98,10 @@ func (m *MongoDB) IsFirstRun() bool {
 	return false
 }
 
-func (m *MongoDB) UpdateStore(supply uint64, head *models.Block, price string, forkedBlock bool) error {
+func (m *MongoDB) UpdateStore(supply string, head *models.Block, price string, forkedBlock bool) error {
 
 	x := big.NewInt(0)
-	x.SetUint64(supply)
+	x.SetString(supply, 10)
 
 	new_supply, err := m.GetSupply()
 
